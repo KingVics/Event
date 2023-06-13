@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon app.js"
+    "start": "node app.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -26,6 +26,9 @@
   "devDependencies": {
     "nodemon": "^2.0.9"
   },
+  "engines": {
+    "node": "14.20.1"
+    },
   "keywords": [],
   "author": "",
   "license": "ISC"
