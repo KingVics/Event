@@ -27,7 +27,9 @@ const CreateCommunity = async (req, res) => {
 const GetCommunity = async (req, res) => {
   const { reference, name } = req.query;
 
-  let queryObject = {};
+  let queryObject = {
+    createdBy: req.user.user,
+  };
 
   if (reference) {
     queryObject.referenceCode = reference;
@@ -40,9 +42,10 @@ const GetCommunity = async (req, res) => {
   let result = Community.find(queryObject);
 
   if (!result) {
-    result = Community.find({});
+    result = Community.find(queryObject);
   }
 
+  console.log(queryObject)
   const comm = await result;
 
   if (!comm.length > 0) {
