@@ -38,11 +38,9 @@ const createEvent = async (req, res) => {
     );
   }
 
-  const user = await User.findOne({ _id: req.user.userId });
-
   if (
-    !user.community ||
-    user.community.toString() !== findCommunity._id.toString()
+    !req.user.userId ||
+    req.user.userId.toString() !== findCommunity.createdBy.toString()
   ) {
     throw new BadRequestError('You do not belong to the community ');
   }
