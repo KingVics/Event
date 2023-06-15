@@ -56,10 +56,10 @@ const GetCommunity = async (req, res) => {
 
   const comm = await result;
 
-  if (!comm.length > 0) {
-    throw new NotFoundError(`Community not found`);
-  }
-  res.status(StatusCodes.OK).json({ comm, count: comm.length });
+  // if (!comm.length > 0) {
+  //   throw new NotFoundError(`Community not found`);
+  // }
+  res.status(StatusCodes.OK).json({ data: comm, count: comm.length });
 };
 
 const deleteCommunity = async (req, res) => {
