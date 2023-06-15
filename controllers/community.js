@@ -2,7 +2,6 @@ const Community = require('../models/community');
 const User = require('../models/user');
 const { BadRequestError, NotFoundError } = require('../errors');
 const { StatusCodes } = require('http-status-codes');
-const user = require('../models/user');
 const ObjectId = require('mongoose').Types.ObjectId;
 
 const CreateCommunity = async (req, res) => {
@@ -10,6 +9,11 @@ const CreateCommunity = async (req, res) => {
   req.body.createdBy = req.user.userId;
   req.body.referenceCode = `COM-${num}`;
 
+  const finduser = await User.findOne({ _id: req.user.userId });
+
+  if (finduser && finduser.community) {
+    throw new BadRequestError(`User already belongs to a community`);
+  }
   const findName = await Community.findOne({ name: req.body.name });
 
   if (findName && findName.name) {
@@ -19,7 +23,13 @@ const CreateCommunity = async (req, res) => {
   if (!num) {
     throw new BadRequestError('Something went wrong, please try again');
   }
+
   const com = await Community.create({ ...req.body });
+  const use = await User.findOneAndUpdate(
+    { _id: req.user.userId },
+    { community: com._id },
+    { new: true }
+  );
 
   res.status(StatusCodes.CREATED).json({ com });
 };
@@ -27,36 +37,27 @@ const CreateCommunity = async (req, res) => {
 const GetCommunity = async (req, res) => {
   const { reference, name } = req.query;
 
-  let queryObject = {
-    createdBy: req.user.userId,
-  };
+  // };
 
-  if (reference) {
-    queryObject.referenceCode = reference;
-  }
+  // if (reference) {
+  //   queryObject.referenceCode = reference;
+  // }
 
-  if (name) {
-    queryObject.name = name;
-  }
+  // if (name) {
+  //   queryObject.name = name;
+  // }
 
-  let result = Community.find(queryObject);
+  // let result = Community.find(queryObject);
+  // console.log(result)
 
-  if (!result) {
-    result = Community.find(queryObject);
-  }
+  // if (!result) {
+  //   console.log('here')
+  result = Community.find({ createdBy: req.user.userId });
 
   const comm = await result;
 
   if (!comm.length > 0) {
-    throw new NotFoundError(
-      `Community with ${
-        queryObject.referenceCode
-          ? queryObject.referenceCode
-          : queryObject.name
-          ? queryObject.name
-          : ''
-      } not found`
-    );
+    throw new NotFoundError(`Community not found`);
   }
   res.status(StatusCodes.OK).json({ comm, count: comm.length });
 };
@@ -75,8 +76,7 @@ const deleteCommunity = async (req, res) => {
     throw new BadRequestError('User can only delete community they create');
   }
 
-  const users = await User.find({ community: new ObjectId(id) });
-
+  const users = await User.find({ community: community._id });
   if (users.length > 1) {
     throw new BadRequestError('Community still has users attached');
   } else if (
