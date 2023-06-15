@@ -81,7 +81,7 @@ const deleteCommunity = async (req, res) => {
     throw new BadRequestError('Community still has users attached');
   } else if (
     (users.length <= 1 &&
-      user[0] &&
+      users[0] &&
       users[0].community.toString() !== id.toString()) ||
     users.length === 0
   ) {
