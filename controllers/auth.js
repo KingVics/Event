@@ -1,9 +1,8 @@
 const User = require('../models/user');
 const Community = require('../models/community');
-const NotificationTokenSchema = require('../models/notification');
 const { BadRequestError, UnauthenticatedError } = require('../errors');
 const { StatusCodes } = require('http-status-codes');
-const SaveNotification = require('./SaveNotification');
+const SaveNotification = require('../middleware/SaveNotification');
 
 const LoginUser = async (req, res) => {
   const { email, password, userToken } = req.body;

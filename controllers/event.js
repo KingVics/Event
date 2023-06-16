@@ -1,9 +1,11 @@
 const Event = require('../models/event');
 const Community = require('../models/community');
-const User = require('../models/user');
+const NotificationTokenSchema = require('../models/notification');
 const { NotFoundError, BadRequestError } = require('../errors');
 const { StatusCodes } = require('http-status-codes');
 const ObjectId = require('mongoose').Types.ObjectId;
+const sendNotification = require('../middleware/sendNotification');
+const getReceipt = require('../middleware/getReceipt');
 
 const getEvent = async (req, res) => {
   const { name } = req.query;
@@ -32,6 +34,10 @@ const createEvent = async (req, res) => {
   const { community } = req.body;
 
   const findCommunity = await Community.findOne({ referenceCode: community });
+  const token = await NotificationTokenSchema.findOne({
+    userId: req.user.userId,
+  });
+
   if (!findCommunity || findCommunity === null) {
     throw new NotFoundError(
       'Event cannot be created because no community found'
@@ -67,6 +73,21 @@ const createEvent = async (req, res) => {
   }
 
   const event = await Event.create({ ...data });
+
+  const tData = {
+    sound: 'default',
+    title: data.name,
+    body: 'And here is the body!',
+    data: { 'Event Date': data.eventDate, 'Reminder Date': data.reminderDate },
+  };
+  const ticket = sendNotification(token.token, tData);
+  getReceipt(ticket)
+    .then((result) => {
+      console.log(result, 'res');
+    })
+    .catch((error) => {
+      console.log(error, 'err');
+    });
 
   res
     .status(StatusCodes.CREATED)
