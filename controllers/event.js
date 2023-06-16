@@ -89,6 +89,18 @@ const updateEvent = async (req, res) => {
     throw new NotFoundError('Event not found');
   }
 
+  const presentDate = new Date().setHours(0, 0, 0, 0);
+
+  if (
+    new Date(eventDate).setHours(0, 0, 0, 0) < presentDate ||
+    new Date(reminderDate).setHours(0, 0, 0, 0) < presentDate ||
+    new Date(reminderDate).getTime() > new Date(eventDate).setHours(0, 0, 0, 0)
+  ) {
+    throw new BadRequestError(
+      'Event date or reminder date can not be past date'
+    );
+  }
+
   if (
     event.createdBy &&
     event.createdBy.toString() !== req.user.userId.toString()
