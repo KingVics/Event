@@ -1,5 +1,6 @@
 const Event = require('../models/event');
 const Community = require('../models/community');
+const User = require('../models/user');
 const NotificationTokenSchema = require('../models/notification');
 const { NotFoundError, BadRequestError } = require('../errors');
 const { StatusCodes } = require('http-status-codes');
@@ -37,17 +38,14 @@ const createEvent = async (req, res) => {
   const token = await NotificationTokenSchema.findOne({
     userId: req.user.userId,
   });
-
+  const user = await User.findOne({ _id: req.user.userId });
   if (!findCommunity || findCommunity === null) {
     throw new NotFoundError(
       'Event cannot be created because no community found'
     );
   }
 
-  if (
-    !req.user.userId ||
-    req.user.userId.toString() !== findCommunity.createdBy.toString()
-  ) {
+  if (user.community.toString() !== findCommunity._id.toString()) {
     throw new BadRequestError('You do not belong to the community ');
   }
 
