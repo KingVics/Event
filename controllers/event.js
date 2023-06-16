@@ -58,7 +58,7 @@ const createEvent = async (req, res) => {
   if (
     new Date(data.eventDate).setHours(0, 0, 0, 0) < presentDate ||
     new Date(data.reminderDate).setHours(0, 0, 0, 0) < presentDate ||
-    new Date(data.reminderDate).setHours(0, 0, 0, 0) <
+    new Date(data.reminderDate).getTime() >
       new Date(data.eventDate).setHours(0, 0, 0, 0)
   ) {
     throw new BadRequestError(
