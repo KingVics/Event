@@ -1,5 +1,6 @@
 const Community = require('../models/community');
 const User = require('../models/user');
+const Event = require('../models/event');
 const { BadRequestError, NotFoundError } = require('../errors');
 const { StatusCodes } = require('http-status-codes');
 const ObjectId = require('mongoose').Types.ObjectId;
@@ -96,6 +97,11 @@ const deleteCommunity = async (req, res) => {
     throw new NotFoundError('User not found with community id');
   }
 
+  const event = await Event.find({ community: new ObjectId(id) });
+
+  if (event.length > 0) {
+    throw new BadRequestError('Community still has event');
+  }
   await User.updateOne(
     { _id: req.user.userId },
     { $unset: { community: ' ' } },
