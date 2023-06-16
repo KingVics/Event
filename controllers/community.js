@@ -77,7 +77,8 @@ const deleteCommunity = async (req, res) => {
   }
 
   const users = await User.find({ community: community._id });
-  if (users.length > 1) {
+
+  if (users.length > 0) {
     throw new BadRequestError('Community still has users attached');
   } else if (
     (users.length <= 1 &&
