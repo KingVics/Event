@@ -79,24 +79,32 @@ const deleteCommunity = async (req, res) => {
   const users = await User.find({ community: community._id });
 
   if (users.length > 0) {
-    throw new BadRequestError('Community still has users attached');
+    if (users.length === 1) {
+      if (users[0].community.toString() !== id.toString()) {
+        throw new BadRequestError('User can only delete community they create');
+      }
+    } else {
+      throw new BadRequestError('Community still has users attached');
+    }
   } else if (
-    (users.length <= 1 &&
-      users[0] &&
-      users[0].community.toString() !== id.toString()) ||
-    users.length === 0
+    users.length <= 1 &&
+    users[0] &&
+    users[0].community.toString() !== id.toString()
   ) {
     throw new BadRequestError('User can only delete community they create');
+  } else if (users.length === 0) {
+    throw new NotFoundError('User not found with community id');
   }
 
   await User.updateOne(
     { _id: req.user.userId },
-    { $unset: { community: ' ' } }
+    { $unset: { community: ' ' } },
+    { new: true }
   );
 
   await Community.findOneAndDelete({ _id: id });
 
-  res.status(StatusCodes.OK).json('Done');
+  res.status(StatusCodes.OK).json({ message: 'Community deleted' });
 };
 
 module.exports = {
