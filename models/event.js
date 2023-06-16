@@ -27,7 +27,7 @@ const EventSchema = mongoose.Schema(
       required: [true, 'Please provide a community'],
     },
   },
-  { timestamp: true }
+  { timestamps: true }
 );
 
 module.exports = mongoose.model('Event', EventSchema);
