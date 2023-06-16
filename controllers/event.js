@@ -123,10 +123,18 @@ const eventCommunity = async (req, res) => {
   res.status(StatusCodes.OK).json({ message: 'Successful', data: event });
 };
 
+const getSingleEvent = async (req, res) => {
+  const { id } = req.params;
+
+  const event = await Event.find({ _id: id });
+  res.status(StatusCodes.OK).json({ message: 'Successful', data: event });
+};
+
 module.exports = {
   getEvent,
   updateEvent,
   deleteEvent,
   createEvent,
   eventCommunity,
+  getSingleEvent,
 };
