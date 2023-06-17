@@ -3,6 +3,7 @@ const Community = require('../models/community');
 const { BadRequestError, UnauthenticatedError } = require('../errors');
 const { StatusCodes } = require('http-status-codes');
 const SaveNotification = require('../middleware/SaveNotification');
+const NotificationTokenSchema = require('../models/notification');
 
 const LoginUser = async (req, res) => {
   const { email, password, userToken } = req.body;
@@ -54,6 +55,8 @@ const RegisterUser = async (req, res) => {
 
   res.status(StatusCodes.CREATED).json({ name: user.name, token });
 };
+
+
 
 module.exports = {
   LoginUser,

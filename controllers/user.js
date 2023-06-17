@@ -103,9 +103,18 @@ const removeCommunity = async (req, res) => {
   res.status(StatusCodes.OK).json({ message: 'Community removed' });
 };
 
+const LogoutUser = async (req, res) => {
+  await NotificationTokenSchema.findOneAndDelete({
+    userId: req.user.userId,
+  });
+
+  res.status(StatusCodes.OK).json({ message: 'Token deleted for user' });
+};
+
 module.exports = {
   getUsers,
   updateUser,
   deleteUser,
   removeCommunity,
+  LogoutUser,
 };
