@@ -35,14 +35,19 @@ const createEvent = async (req, res) => {
   const { community } = req.body;
 
   const findCommunity = await Community.findOne({ referenceCode: community });
-  const token = await NotificationTokenSchema.findOne({
-    userId: req.user.userId,
+  const token = await NotificationTokenSchema.find({
+    community: findCommunity._id,
   });
   const user = await User.findOne({ _id: req.user.userId });
+
   if (!findCommunity || findCommunity === null) {
     throw new NotFoundError(
       'Event cannot be created because no community found'
     );
+  }
+
+  if (!user.community) {
+    throw new BadRequestError('You do not belong to the community ');
   }
 
   if (user.community.toString() !== findCommunity._id.toString()) {
@@ -75,10 +80,11 @@ const createEvent = async (req, res) => {
   const tData = {
     sound: 'default',
     title: data.name,
-    body: 'And here is the body!',
+    body: `You have an event ${data.name} coming up on ${data.eventDate}`,
     data: { 'Event Date': data.eventDate, 'Reminder Date': data.reminderDate },
   };
-  const ticket = sendNotification(token.token, tData);
+
+  const ticket = sendNotification(token, tData);
   getReceipt(ticket)
     .then((result) => {
       console.log(result, 'res');

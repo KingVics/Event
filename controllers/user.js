@@ -2,7 +2,7 @@ const User = require('../models/user');
 const Community = require('../models/community');
 const { BadRequestError, NotFoundError } = require('../errors');
 const { StatusCodes } = require('http-status-codes');
-
+const NotificationTokenSchema = require('../models/notification');
 
 const getUsers = async (req, res) => {
   const { name, email } = req.query;
@@ -48,8 +48,16 @@ const updateUser = async (req, res) => {
   if (user && user.community) {
     throw new BadRequestError('User already belong to a community');
   }
-
-  await User.findByIdAndUpdate(req.user.userId, { community:findCommunity._id });
+  await NotificationTokenSchema.updateOne(
+    {
+      userId: req.user.userId,
+    },
+    { community: findCommunity._id },
+    { new: true }
+  );
+  await User.findByIdAndUpdate(req.user.userId, {
+    community: findCommunity._id,
+  });
   res.status(StatusCodes.OK).json({ message: 'Record updated' });
 };
 
@@ -79,6 +87,13 @@ const removeCommunity = async (req, res) => {
   if (!finduser.community) {
     throw new BadRequestError('No community found for this user');
   }
+
+  await NotificationTokenSchema.updateOne(
+    {
+      userId: req.user.userId,
+    },
+    { $unset: { community: '' } }
+  );
 
   await User.updateOne(
     { _id: req.user.userId },

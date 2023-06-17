@@ -32,6 +32,8 @@ const CreateCommunity = async (req, res) => {
     { new: true }
   );
 
+  
+
   res.status(StatusCodes.CREATED).json({ com });
 };
 
