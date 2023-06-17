@@ -84,13 +84,13 @@ const createEvent = async (req, res) => {
     data: { 'Event Date': data.eventDate, 'Reminder Date': data.reminderDate },
   };
 
-  const ticket = sendNotification(token, tData);
-  getReceipt(ticket)
-    .then((result) => {
-      console.log(result, 'res');
+  sendNotification(token, tData)
+    .then((ticket) => {
+      getReceipt(ticket);
     })
     .catch((error) => {
-      console.log(error, 'err');
+      console.log(error);
+      throw new BadRequestError('Event notification error');
     });
 
   res
