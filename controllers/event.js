@@ -7,6 +7,7 @@ const { StatusCodes } = require('http-status-codes');
 const ObjectId = require('mongoose').Types.ObjectId;
 const sendNotification = require('../middleware/sendNotification');
 const getReceipt = require('../middleware/getReceipt');
+const scheduleEvent = require('../middleware/scheduleEvent');
 
 const getEvent = async (req, res) => {
   const { name } = req.query;
@@ -64,16 +65,16 @@ const createEvent = async (req, res) => {
 
   const presentDate = new Date().setHours(0, 0, 0, 0);
 
-  if (
-    new Date(data.eventDate).setHours(0, 0, 0, 0) < presentDate ||
-    new Date(data.reminderDate).setHours(0, 0, 0, 0) < presentDate ||
-    new Date(data.reminderDate).getTime() >
-      new Date(data.eventDate).setHours(0, 0, 0, 0)
-  ) {
-    throw new BadRequestError(
-      'Event date or reminder date can not be past date'
-    );
-  }
+  // if (
+  //   new Date(data.eventDate).setHours(0, 0, 0, 0) < presentDate ||
+  //   new Date(data.reminderDate).setHours(0, 0, 0, 0) < presentDate ||
+  //   new Date(data.reminderDate).getTime() >
+  //     new Date(data.eventDate).setHours(0, 0, 0, 0)
+  // ) {
+  //   throw new BadRequestError(
+  //     'Event date or reminder date can not be past date'
+  //   );
+  // }
 
   const event = await Event.create({ ...data });
 
@@ -84,14 +85,16 @@ const createEvent = async (req, res) => {
     data: { 'Event Date': data.eventDate, 'Reminder Date': data.reminderDate },
   };
 
-  sendNotification(token, tData)
-    .then((ticket) => {
-      getReceipt(ticket);
-    })
-    .catch((error) => {
-      console.log(error);
-      throw new BadRequestError('Event notification error');
-    });
+  scheduleEvent({ token, tData });
+
+  // sendNotification(token, tData)
+  //   .then((ticket) => {
+  //     getReceipt(ticket);
+  //   })
+  //   .catch((error) => {
+  //     console.log(error)
+  //     throw new BadRequestError('Event notification error');
+  //   });
 
   res
     .status(StatusCodes.CREATED)
