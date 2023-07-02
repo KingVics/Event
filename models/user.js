@@ -27,6 +27,10 @@ const User = mongoose.Schema({
     ref: 'Community',
     // require: [true, 'Please provide a user'],
   },
+  refreshToken: {
+    type: String,
+    // required: [true, 'Please provide refresh token']
+  }
 });
 
 User.pre('save', async function (next) {
@@ -41,11 +45,20 @@ User.methods.CreateJWT = function () {
     { userId: this._id, name: this.name },
     process.env.JWT_SECRET,
     {
-      expiresIn: '1d',
+      expiresIn: '1m',
     }
   );
 };
 
+User.methods.RefreshJWT = function () {
+  return jwt.sign(
+    { userId: this._id, name: this.name },
+    process.env.REFRESH_TOKEN,
+    {
+      expiresIn: '1d',
+    }
+  );
+};
 User.methods.comparePassword = async function (canditatePassword) {
   const isMatch = await bcrypt.compare(canditatePassword, this.password);
   return isMatch;
