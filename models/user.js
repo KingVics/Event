@@ -45,7 +45,7 @@ User.methods.CreateJWT = function () {
     { userId: this._id, name: this.name },
     process.env.JWT_SECRET,
     {
-      expiresIn: '1m',
+      expiresIn: '5m',
     }
   );
 };

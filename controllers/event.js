@@ -5,9 +5,8 @@ const NotificationTokenSchema = require('../models/notification');
 const { NotFoundError, BadRequestError } = require('../errors');
 const { StatusCodes } = require('http-status-codes');
 const ObjectId = require('mongoose').Types.ObjectId;
-const sendNotification = require('../middleware/sendNotification');
-const getReceipt = require('../middleware/getReceipt');
 const scheduleEvent = require('../middleware/scheduleEvent');
+const RescheduleEvent = require('../middleware/rescheduleEvent');
 
 const getEvent = async (req, res) => {
   const { name } = req.query;
@@ -39,6 +38,10 @@ const createEvent = async (req, res) => {
   const token = await NotificationTokenSchema.find({
     community: findCommunity._id,
   });
+
+  if (!token) {
+    throw new BadRequestError('Device not registered');
+  }
   const user = await User.findOne({ _id: req.user.userId });
 
   if (!findCommunity || findCommunity === null) {
@@ -87,15 +90,6 @@ const createEvent = async (req, res) => {
 
   scheduleEvent({ token, tData });
 
-  // sendNotification(token, tData)
-  //   .then((ticket) => {
-  //     getReceipt(ticket);
-  //   })
-  //   .catch((error) => {
-  //     console.log(error)
-  //     throw new BadRequestError('Event notification error');
-  //   });
-
   res
     .status(StatusCodes.CREATED)
     .json({ message: 'Event created', data: event });
@@ -107,6 +101,13 @@ const updateEvent = async (req, res) => {
     body: { name, eventDate, reminderDate },
   } = req;
 
+  const token = await NotificationTokenSchema.find({
+    userId: req.user.userId,
+  });
+
+  if (!token) {
+    throw new BadRequestError('Device not registered');
+  }
   const event = await Event.findOneAndUpdate(
     { _id: id },
     { name, eventDate, reminderDate },
@@ -135,6 +136,16 @@ const updateEvent = async (req, res) => {
   ) {
     throw new BadRequestError('User can only edit created event');
   }
+
+  const tData = {
+    sound: 'default',
+    title: event.name,
+    body: `You have an event ${event.name} coming up on ${event.eventDate}`,
+    data: { 'Event Date': event.eventDate, 'Reminder Date': event.reminderDate },
+  };
+
+  RescheduleEvent({ token, tData });
+
   res.status(StatusCodes.OK).json({ message: 'Successful', data: event });
 };
 
