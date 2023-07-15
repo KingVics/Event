@@ -32,8 +32,6 @@ const CreateCommunity = async (req, res) => {
     { new: true }
   );
 
-  
-
   res.status(StatusCodes.CREATED).json({ com });
 };
 
@@ -56,9 +54,9 @@ const GetCommunity = async (req, res) => {
   // if (!result) {
   //   console.log('here')
   // result = Community.find({ createdBy: req.user.userId });
-  // const finduser = await User.findOne({ _id: req.user.userId });
+  const finduser = await User.findOne({ _id: req.user.userId });
 
-  result = Community.find({ createdBy: req.user.userId });
+  result = Community.find({ _id: finduser.community });
 
   const comm = await result;
 
