@@ -3,7 +3,6 @@ const Community = require('../models/community');
 const { BadRequestError, UnauthenticatedError } = require('../errors');
 const { StatusCodes } = require('http-status-codes');
 const SaveNotification = require('../middleware/SaveNotification');
-const NotificationTokenSchema = require('../models/notification');
 const jwt = require('jsonwebtoken');
 
 const LoginUser = async (req, res) => {
@@ -61,11 +60,11 @@ const RegisterUser = async (req, res) => {
     name: req.body.name,
     email: req.body.email,
     password: req.body.password,
-    community: comm.createdBy,
+    community: comm._id ,
   };
-  const user = await User.create({ ...data });
 
-  SaveNotification({ user, userToken });
+  const user = await User.create({ ...data });
+  SaveNotification({ user, userToken, comId: comm._id });
 
   const token = user.CreateJWT();
   const refreshToken = user.RefreshJWT();

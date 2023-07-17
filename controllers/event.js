@@ -36,13 +36,14 @@ const createEvent = async (req, res) => {
 
   const findCommunity = await Community.findOne({ referenceCode: community });
   const token = await NotificationTokenSchema.find({
-    community: findCommunity._id,
+    community: {
+      $in: findCommunity._id,
+    },
   });
 
   if (!token) {
     throw new BadRequestError('Device not registered');
   }
-  const user = await User.findOne({ _id: req.user.userId });
 
   if (!findCommunity || findCommunity === null) {
     throw new NotFoundError(
@@ -50,12 +51,12 @@ const createEvent = async (req, res) => {
     );
   }
 
-  if (!user.community) {
-    throw new BadRequestError('You do not belong to the community ');
-  }
+  const filteredToken = token?.map((c) => ({
+    token: c.token,
+  }));
 
-  if (user.community.toString() !== findCommunity._id.toString()) {
-    throw new BadRequestError('You do not belong to the community ');
+  if (!filteredToken) {
+    throw new BadRequestError('Device not registered');
   }
 
   const data = {
@@ -81,6 +82,10 @@ const createEvent = async (req, res) => {
 
   const event = await Event.create({ ...data });
 
+  if (!event) {
+    throw new BadRequestError('Cannot process request');
+  }
+
   const tData = {
     sound: 'default',
     title: data.name,
@@ -88,11 +93,9 @@ const createEvent = async (req, res) => {
     data: { 'Event Date': data.eventDate, 'Reminder Date': data.reminderDate },
   };
 
-  scheduleEvent({ token, tData });
+  scheduleEvent({ filteredToken, tData });
 
-  res
-    .status(StatusCodes.CREATED)
-    .json({ message: 'Event created', data: event });
+  res.status(StatusCodes.CREATED).json({ message: 'Event created', data: [] });
 };
 
 const updateEvent = async (req, res) => {
@@ -141,7 +144,10 @@ const updateEvent = async (req, res) => {
     sound: 'default',
     title: event.name,
     body: `You have an event ${event.name} coming up on ${event.eventDate}`,
-    data: { 'Event Date': event.eventDate, 'Reminder Date': event.reminderDate },
+    data: {
+      'Event Date': event.eventDate,
+      'Reminder Date': event.reminderDate,
+    },
   };
 
   RescheduleEvent({ token, tData });

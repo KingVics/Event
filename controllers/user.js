@@ -42,26 +42,38 @@ const updateUser = async (req, res) => {
   }
 
   const findCommunity = await Community.findOne({ referenceCode: community });
-
   if (!findCommunity || findCommunity === null) {
     throw new NotFoundError(`No community found`);
   }
 
   const user = await User.findById(req.user.userId);
-
-  if (user && user.community) {
-    throw new BadRequestError('User already belong to a community');
+  if (!user) {
+    throw new NotFoundError('User not found');
   }
+
+  const foundCom = user.community.find(
+    (c) => c.toString() === findCommunity._id.toString()
+  );
+
+  if (foundCom) {
+    throw new BadRequestError('User already belong to this community');
+  }
+
   await NotificationTokenSchema.updateOne(
     {
       userId: req.user.userId,
     },
-    { community: findCommunity._id },
+    { $push: { community: findCommunity._id } },
+
     { new: true }
   );
-  await User.findByIdAndUpdate(req.user.userId, {
-    community: findCommunity._id,
-  });
+  await User.findByIdAndUpdate(
+    req.user.userId,
+    {
+      $push: { community: findCommunity._id },
+    },
+    { new: true }
+  );
   res.status(StatusCodes.OK).json({ message: 'Record updated' });
 };
 
@@ -82,26 +94,40 @@ const deleteUser = async (req, res) => {
 };
 
 const removeCommunity = async (req, res) => {
-  const finduser = await User.findById(req.user.userId);
+  const { community } = req.body;
 
-  if (finduser === null) {
-    throw new NotFoundError('No user found');
+  if (!community) {
+    throw new NotFoundError('No community found');
   }
 
-  if (!finduser.community) {
+  const foundCommunity = await Community.findOne({ referenceCode: community });
+
+  if (!foundCommunity) {
     throw new BadRequestError('No community found for this user');
   }
+
+  const finduser = await User.findById(req.user.userId);
+
+  if (!finduser.community.length > 0) {
+    throw new BadRequestError('No community found for this user');
+  }
+
+  const filtered = finduser.community.filter(
+    (c) => c.toString() !== foundCommunity._id.toString()
+  );
 
   await NotificationTokenSchema.updateOne(
     {
       userId: req.user.userId,
     },
-    { $unset: { community: '' } }
+    { community: filtered },
+    { new: true }
   );
 
   await User.updateOne(
     { _id: req.user.userId },
-    { $unset: { community: ' ' } }
+    { community: filtered },
+    { new: true }
   );
 
   res.status(StatusCodes.OK).json({ message: 'Community removed' });

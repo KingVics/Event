@@ -11,10 +11,12 @@ const NotificationTokenSchema = mongoose.Schema(
       type: String,
       required: [true, 'token is required'],
     },
-    community: {
-      type: mongoose.Types.ObjectId,
-      ref: 'Community',
-    },
+    community: [mongoose.Types.ObjectId],
+
+    // community: {
+    //   type: mongoose.Types.ObjectId,
+    //   ref: 'Community',
+    // },
   },
   { timestamps: true }
 );

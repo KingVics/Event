@@ -22,15 +22,16 @@ const User = mongoose.Schema({
     required: [true, 'Please provide password'],
     minlength: 6,
   },
-  community: {
-    type: mongoose.Types.ObjectId,
-    ref: 'Community',
-    // require: [true, 'Please provide a user'],
-  },
+  // community: {
+  //   type: mongoose.Types.ObjectId,
+  //   ref: 'Community',
+  //   // require: [true, 'Please provide a user'],
+  // },
+  community: [mongoose.Types.ObjectId],
   refreshToken: {
     type: String,
     // required: [true, 'Please provide refresh token']
-  }
+  },
 });
 
 User.pre('save', async function (next) {

@@ -3,6 +3,7 @@ const User = require('../models/user');
 const Event = require('../models/event');
 const { BadRequestError, NotFoundError } = require('../errors');
 const { StatusCodes } = require('http-status-codes');
+const SaveNotification = require('../middleware/SaveNotification');
 const ObjectId = require('mongoose').Types.ObjectId;
 
 const CreateCommunity = async (req, res) => {
@@ -10,8 +11,11 @@ const CreateCommunity = async (req, res) => {
   req.body.createdBy = req.user.userId;
   req.body.referenceCode = `COM-${num}`;
 
-  // const finduser = await User.findOne({ _id: req.user.userId });
+  const finduser = await User.findOne({ _id: req.user.userId });
 
+  if (!finduser) {
+    throw new BadRequestError(`No user exist`);
+  }
   // if (finduser && finduser.community) {
   //   throw new BadRequestError(`User already belongs to a community`);
   // }
@@ -26,12 +30,13 @@ const CreateCommunity = async (req, res) => {
   }
 
   const com = await Community.create({ ...req.body });
-  const use = await User.findOneAndUpdate(
+
+  const use = await User.findByIdAndUpdate(
     { _id: req.user.userId },
-    { community: com._id },
+    { $push: { community: com._id } },
     { new: true }
   );
-
+  SaveNotification({ user: use, comId:com._id  });
   res.status(StatusCodes.CREATED).json({ com });
 };
 
@@ -56,13 +61,17 @@ const GetCommunity = async (req, res) => {
   // result = Community.find({ createdBy: req.user.userId });
   const finduser = await User.findOne({ _id: req.user.userId });
 
-  result = Community.find({ _id: finduser.community });
+  result = Community.find({
+    _id: {
+      $in: finduser.community,
+    },
+  });
 
   const comm = await result;
 
-  // if (!comm.length > 0) {
-  //   throw new NotFoundError(`Community not found`);
-  // }
+  if (!comm.length > 0) {
+    throw new NotFoundError(`Community not found`);
+  }
   res.status(StatusCodes.OK).json({ data: comm, count: comm.length });
 };
 
