@@ -26,6 +26,10 @@ const EventSchema = mongoose.Schema(
       ref: 'Community',
       required: [true, 'Please provide a community'],
     },
+    expired: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );

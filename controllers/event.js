@@ -7,6 +7,7 @@ const { StatusCodes } = require('http-status-codes');
 const ObjectId = require('mongoose').Types.ObjectId;
 const scheduleEvent = require('../middleware/scheduleEvent');
 const RescheduleEvent = require('../middleware/rescheduleEvent');
+const CancelEvebnt = require('../middleware/cancelSchedule');
 
 const getEvent = async (req, res) => {
   const { name } = req.query;
@@ -93,7 +94,12 @@ const createEvent = async (req, res) => {
     data: { 'Event Date': data.eventDate, 'Reminder Date': data.reminderDate },
   };
 
-  scheduleEvent({ filteredToken, tData });
+  scheduleEvent({
+    filteredToken,
+    tData,
+    eventId: event._id,
+    userId: req.user.userId,
+  });
 
   res.status(StatusCodes.CREATED).json({ message: 'Event created', data: [] });
 };
@@ -101,7 +107,7 @@ const createEvent = async (req, res) => {
 const updateEvent = async (req, res) => {
   const {
     params: { id },
-    body: { name, eventDate, reminderDate },
+    body: { reminderDate },
   } = req;
 
   const token = await NotificationTokenSchema.find({
@@ -111,9 +117,15 @@ const updateEvent = async (req, res) => {
   if (!token) {
     throw new BadRequestError('Device not registered');
   }
+
+  const oneEvent = await Event.findById({ _id: id });
+
+  if (oneEvent?.expired) {
+    throw new BadRequestError('This event has expired');
+  }
   const event = await Event.findOneAndUpdate(
     { _id: id },
-    { name, eventDate, reminderDate },
+    { reminderDate },
     { new: true }
   );
 
@@ -123,22 +135,22 @@ const updateEvent = async (req, res) => {
 
   const presentDate = new Date().setHours(0, 0, 0, 0);
 
-  if (
-    new Date(eventDate).setHours(0, 0, 0, 0) < presentDate ||
-    new Date(reminderDate).setHours(0, 0, 0, 0) < presentDate ||
-    new Date(reminderDate).getTime() > new Date(eventDate).setHours(0, 0, 0, 0)
-  ) {
-    throw new BadRequestError(
-      'Event date or reminder date can not be past date'
-    );
-  }
+  // if (
+  //   new Date(eventDate).setHours(0, 0, 0, 0) < presentDate ||
+  //   new Date(reminderDate).setHours(0, 0, 0, 0) < presentDate ||
+  //   new Date(reminderDate).getTime() > new Date(eventDate).setHours(0, 0, 0, 0)
+  // ) {
+  //   throw new BadRequestError(
+  //     'Event date or reminder date can not be past date'
+  //   );
+  // }
 
-  if (
-    event.createdBy &&
-    event.createdBy.toString() !== req.user.userId.toString()
-  ) {
-    throw new BadRequestError('User can only edit created event');
-  }
+  // if (
+  //   event.createdBy &&
+  //   event.createdBy.toString() !== req.user.userId.toString()
+  // ) {
+  //   throw new BadRequestError('User can only edit created event');
+  // }
 
   const tData = {
     sound: 'default',
@@ -150,9 +162,14 @@ const updateEvent = async (req, res) => {
     },
   };
 
-  RescheduleEvent({ token, tData });
+  RescheduleEvent({
+    token,
+    tData,
+    eventId: event._id,
+    userId: req.user.userId,
+  });
 
-  res.status(StatusCodes.OK).json({ message: 'Successful', data: event });
+  res.status(StatusCodes.OK).json({ message: 'Successful', data: [] });
 };
 
 const deleteEvent = async (req, res) => {
@@ -167,6 +184,8 @@ const deleteEvent = async (req, res) => {
   if (event.createdBy.toString() !== req.user.userId) {
     throw new BadRequestError('User can only delete created event');
   }
+
+  CancelEvebnt({ eventId: event._id, userId: req.user.userId });
 
   await Event.findOneAndDelete({ _id: id });
 

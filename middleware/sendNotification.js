@@ -1,9 +1,8 @@
 const { Expo } = require('expo-server-sdk');
 const NotificationTokenSchema = require('../models/notification');
-const formDate = require('./formDate');
-const schedule = require('node-schedule');
+const Event = require('../models/event');
 
-const sendNotification = async (expoPushToken, data) => {
+const sendNotification = async (expoPushToken, data, eventId) => {
   const expo = new Expo({ accessToken: process.env.ACCESS_TOKEN });
 
   const tokens = expoPushToken.map((item) => ({
@@ -39,6 +38,11 @@ const sendNotification = async (expoPushToken, data) => {
     }
 
     if (ticket.status === 'ok') {
+      await Event.findOneAndUpdate(
+        { _id: eventId },
+        { expired: true },
+        { new: true }
+      );
       response = ticket.id;
     }
   }
